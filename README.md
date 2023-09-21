@@ -54,12 +54,6 @@ docker-compose up -d --wait     #wait till all container are healthy
 docker-compose up -d kong kong-manager #if you want to skip kong database
 ```
 
-OR
-
-```bash
-./startup.sh
-```
-
 ### Browse Customer site
 
 Go to [http://localhost/](http://localhost:80)
