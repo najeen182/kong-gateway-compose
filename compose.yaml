@@ -1,0 +1,76 @@
+x-environment-database: &x-environment-database
+  KONG_DATABASE: ${KONG_DATABASE:-postgres}
+  KONG_PG_HOST: ${KONG_PG_HOST:-kong-database}
+  KONG_PG_PASSWORD: ${KONG_PG_PASSWORD:-kong}
+  KONG_PG_USER: ${KONG_PG_USER:-kong}
+  KONG_CASSANDRA_CONTACT_POINTS: ${KONG_CASSANDRA_CONTACT_POINTS:-kong-database}
+
+x-common-network: &x-common-network
+  - kong-gateway
+
+version: "3.8"
+
+services:
+  kong:
+    image: kong
+    container_name: kong
+    depends_on:
+      kong-database:
+        condition: service_healthy
+    hostname: kong
+    ports:
+      - ${KONG_CUSTOMER_PORT:-80}:8000 #customer
+      - ${KONG_ADMIN_API_PORT:-8001}:8001 #Admin API
+      - ${KONG_UI_PORT:-8002}:8002
+    environment:
+      <<: *x-environment-database
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_PATH: /manager
+    networks: *x-common-network
+    healthcheck:
+      test: [CMD, kong, health]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  kong-database:
+    image: postgres:9.6
+    environment:
+      POSTGRES_USER: ${KONG_PG_USER:-kong}
+      POSTGRES_DB: ${KONG_DATABASE:-kong}
+      POSTGRES_PASSWORD: ${KONG_PG_PASSWORD:-kong}
+    container_name: kong-database
+    volumes:
+      - kong-database:/var/lib/postgresql/data
+    networks: *x-common-network
+    ports:
+      - ${PG_DATABASE_PORT:-5432}:5432
+    hostname: kong-database
+    healthcheck:
+      test: [CMD, pg_isready]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  kong-migration:
+    image: kong
+    depends_on:
+      kong-database:
+        condition: service_healthy
+    container_name: kong-migration
+    environment:
+      <<: *x-environment-database
+    command: kong migrations bootstrap
+    networks: *x-common-network
+    healthcheck:
+      disable: true
+
+volumes:
+  kong-database:
+
+networks:
+  kong-gateway:
