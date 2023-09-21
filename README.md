@@ -42,6 +42,7 @@ cd kong-gateway-compose
 | KONG_CUSTOMER_PORT            | api gateway port that will be consumed by user or frontend | 80            |                                                |
 | KONG_ADMIN_API_PORT           | kong ADMIN API PORt                                        | 8001          |                                                |
 | KONG_UI_PORT                  | kong manager ui                                            | 8002          |                                                |
+| KONG_VERSION                  | kong version                                               | latest        |
 
 ## Usage
 
